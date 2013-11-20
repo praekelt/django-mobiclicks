@@ -1,0 +1,7 @@
+*.pyc
+*.pyo
+*~
+ve
+pep8.txt
+coverage.xml
+*.egg-info
