@@ -16,10 +16,6 @@ MIDDLEWARE_CLASSES = (
     'mobiclicks.middleware.MobiClicksMiddleware',
 )
 
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-)
-
 INSTALLED_APPS = (
     'mobiclicks',
     'djcelery',

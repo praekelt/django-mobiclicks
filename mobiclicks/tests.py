@@ -1,8 +1,14 @@
 from datetime import timedelta
 from mock import patch
+import unittest
 
 from django.conf import settings
-from django.contrib.auth.models import User
+try:
+    from django.contrib.auth import get_user_model
+except ImportError:  # django < 1.5
+    from django.contrib.auth.models import User
+else:
+    User = get_user_model()
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from django.test import TestCase
@@ -12,6 +18,10 @@ from django.utils.importlib import import_module
 
 from mobiclicks.middleware import MobiClicksMiddleware
 from mobiclicks import conf
+
+
+class CannotCreateCustomUser(unittest.SkipTest):
+    pass
 
 
 class RequestFactoryTestCase(TestCase):
@@ -97,11 +107,18 @@ class RegistrationTrackingTestCase(RequestFactoryTestCase):
         self.session[conf.CPA_TOKEN_SESSION_KEY] = self.cpatoken
 
     def create_user(self, username='foo'):
-        return User.objects.create_user(
-            username,
-            '%s@example.com' % username,
-            'password'
-        )
+        try:
+            return User.objects.create_user(
+                username,
+                '%s@example.com' % username,
+                'password'
+            )
+        except TypeError:
+            # We cannot run this test if we don't know
+            # how to create a user
+            if settings.AUTH_USER_MODEL != 'auth.User':
+                raise CannotCreateCustomUser
+            raise
 
     @patch('mobiclicks.tasks.requests.get')
     def test_track_registration_on_login(self, mock_get):
@@ -124,6 +141,7 @@ class RegistrationTrackingTestCase(RequestFactoryTestCase):
         # change date_joined so no longer a new user
         user.date_joined = user.date_joined - timedelta(days=1)
         user.save()
+        self.session[conf.CPA_TOKEN_SESSION_KEY] = self.cpatoken
         mock_get.reset()
         user_logged_in.send(sender=User, user=user,
                             request=request)
