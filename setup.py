@@ -21,12 +21,14 @@ setup(
     packages = find_packages(),
     install_requires = [
         'Django>=1.4,<1.6',
+        'celery>3'
     ],
     include_package_data=True,
     tests_require=[
         'django-setuptest>=0.1.2',
         'coverage',
-        'pysqlite'
+        'pysqlite',
+        'mock'
     ],
     test_suite="setuptest.setuptest.SetupTestSuite",
     cmdclass={'test': getcmdclass()},
