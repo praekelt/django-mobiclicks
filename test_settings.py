@@ -18,4 +18,17 @@ MIDDLEWARE_CLASSES = (
 
 INSTALLED_APPS = (
     'mobiclicks',
+    'djcelery',
+    'kombu.transport.django'
 )
+
+CELERY_ALWAYS_EAGER = True
+BROKER_URL = 'django://'
+CELERY_RESULT_BACKEND = "database"
+
+MOBICLICKS = {
+    'CPA_SECURITY_TOKEN': 'foo'
+}
+
+import djcelery
+djcelery.setup_loader()

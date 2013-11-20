@@ -1,4 +1,5 @@
 from mobiclicks import conf
+from mobiclicks.tasks import confirm_click
 
 
 class MobiClicksMiddleware(object):
@@ -10,7 +11,12 @@ class MobiClicksMiddleware(object):
     '''
 
     def process_request(self, request):
+        # store the CPA token for later acquisition tracking
         if conf.CPA_TOKEN_PARAMETER_NAME in request.GET:
             request.session[conf.CPA_TOKEN_SESSION_KEY] = \
                 request.GET[conf.CPA_TOKEN_PARAMETER_NAME]
-            # track the ad landing
+
+        # confirm the ad click-through, if enabled
+        if (conf.CONFIRM_CLICKS and
+                conf.CLICK_REF_PARAMETER_NAME in request.GET):
+            confirm_click.delay(request.GET[conf.CLICK_REF_PARAMETER_NAME])

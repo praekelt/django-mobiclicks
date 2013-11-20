@@ -21,7 +21,9 @@ setup(
     packages = find_packages(),
     install_requires = [
         'Django>=1.4,<1.6',
-        'celery>3'
+        'django-celery',
+        'celery>3',
+        'requests'
     ],
     include_package_data=True,
     tests_require=[
