@@ -16,10 +16,16 @@ MIDDLEWARE_CLASSES = (
     'mobiclicks.middleware.MobiClicksMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+)
+
 INSTALLED_APPS = (
     'mobiclicks',
     'djcelery',
-    'kombu.transport.django'
+    'kombu.transport.django',
+    'django.contrib.auth',
+    'django.contrib.contenttypes'
 )
 
 CELERY_ALWAYS_EAGER = True

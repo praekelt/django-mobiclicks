@@ -1,6 +1,9 @@
+from datetime import timedelta
 from mock import patch
 
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
 from django.test import TestCase
 from django.test.client import RequestFactory
@@ -12,6 +15,7 @@ from mobiclicks import conf
 
 
 class RequestFactoryTestCase(TestCase):
+    cpatoken = 'foo'
 
     def setUp(self):
         self.factory = RequestFactory()
@@ -30,7 +34,6 @@ class RequestFactoryTestCase(TestCase):
 
 
 class MiddlewareTestCase(RequestFactoryTestCase):
-    cpatoken = 'foo'
 
     @classmethod
     def setUpClass(cls):
@@ -63,12 +66,12 @@ class MiddlewareTestCase(RequestFactoryTestCase):
             self.assertEquals(self.session[conf.CPA_TOKEN_SESSION_KEY],
                               self.cpatoken)
 
-    @patch('mobiclicks.tasks.requests.post')
-    def test_click_confirmation(self, mock_post):
+    @patch('mobiclicks.tasks.requests.get')
+    def test_click_confirmation(self, mock_get):
         click_ref = 'foo'
         request = self.make_request('/?pollen8_click_ref=%s' % click_ref)
         self.middleware.process_request(request)
-        mock_post.assert_called_once_with(
+        mock_get.assert_called_once_with(
             conf.CLICK_CONFIRMATION_URL,
             params={
                 'action': 'clickReceived',
@@ -82,9 +85,49 @@ class MiddlewareTestCase(RequestFactoryTestCase):
             'CONFIRM_CLICKS': False,
             'CPA_SECURITY_TOKEN': 'foo'
         }):
-            mock_post.reset()
+            mock_get.reset()
             self.middleware.process_request(request)
-            mock_post.assert_not_called()
+            mock_get.assert_not_called()
+
+
+class RegistrationTrackingTestCase(RequestFactoryTestCase):
+
+    def setUp(self):
+        super(RegistrationTrackingTestCase, self).setUp()
+        self.session[conf.CPA_TOKEN_SESSION_KEY] = self.cpatoken
+
+    def create_user(self, username='foo'):
+        return User.objects.create_user(
+            username,
+            '%s@example.com' % username,
+            'password'
+        )
+
+    @patch('mobiclicks.tasks.requests.get')
+    def test_track_registration_on_login(self, mock_get):
+        self.assertTrue(conf.TRACK_REGISTRATIONS)
+        request = self.make_request('/join/')
+        # this can be a different user model but
+        # it needs to have a 'date_joined' field
+        user = self.create_user()
+        user_logged_in.send(sender=User, user=user,
+                            request=request)
+        mock_get.assert_called_once_with(
+            conf.ACQUISITION_TRACKING_URL,
+            params={
+                'cpakey': conf.CPA_SECURITY_TOKEN,
+                'code': self.cpatoken,
+            }
+        )
+        self.assertNotIn(conf.CPA_TOKEN_SESSION_KEY, self.session)
+
+        # change date_joined so no longer a new user
+        user.date_joined = user.date_joined - timedelta(days=1)
+        user.save()
+        mock_get.reset()
+        user_logged_in.send(sender=User, user=user,
+                            request=request)
+        mock_get.assert_not_called()
 
 
 @receiver(setting_changed)
