@@ -3,6 +3,7 @@ django-mobiclicks v.0.1
 
 Requirements
 ------------
+If a custom user model is used, it needs to have a datetime ``date_joined`` field. This is used to determine if a user is new or not. Check setup.py for other requirements.
 
 Settings
 --------

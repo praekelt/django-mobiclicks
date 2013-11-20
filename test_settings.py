@@ -21,7 +21,8 @@ INSTALLED_APPS = (
     'djcelery',
     'kombu.transport.django',
     'django.contrib.auth',
-    'django.contrib.contenttypes'
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
 )
 
 CELERY_ALWAYS_EAGER = True

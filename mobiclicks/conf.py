@@ -49,4 +49,3 @@ def validate_configuration():
 
 
 init_configuration()
-validate_configuration()

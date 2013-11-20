@@ -30,7 +30,6 @@ class RequestFactoryTestCase(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
         # set up a session
-        settings.SESSION_ENGINE = 'django.contrib.sessions.backends.file'
         engine = import_module(settings.SESSION_ENGINE)
         store = engine.SessionStore()
         store.save()
