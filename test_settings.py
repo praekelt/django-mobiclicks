@@ -21,7 +21,8 @@ INSTALLED_APPS = (
     'djcelery',
     'kombu.transport.django',
     'django.contrib.auth',
-    'django.contrib.contenttypes'
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
 )
 
 CELERY_ALWAYS_EAGER = True
@@ -29,7 +30,9 @@ BROKER_URL = 'django://'
 CELERY_RESULT_BACKEND = "database"
 
 MOBICLICKS = {
-    'CPA_SECURITY_TOKEN': 'foo'
+    'CPA_SECURITY_TOKEN': 'foo',
+    'TRACK_REGISTRATIONS': False,
+    'CONFIRM_CLICKS': False,
 }
 
 import djcelery
