@@ -3,6 +3,8 @@ from mock import patch
 import unittest
 
 from django.conf import settings
+from django.conf.urls import url
+from django.conf.urls.i18n import i18n_patterns
 try:
     from django.contrib.auth import get_user_model
 except ImportError:  # django < 1.5
@@ -11,6 +13,8 @@ else:
     User = get_user_model()
 from django.contrib.auth.signals import user_logged_in
 from django.dispatch import receiver
+from django.http import HttpResponseNotFound
+from django.middleware.locale import LocaleMiddleware
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test.signals import setting_changed
@@ -102,6 +106,33 @@ class MiddlewareTestCase(RequestFactoryTestCase):
             mock_get.reset()
             self.middleware.process_request(request)
             mock_get.assert_not_called()
+
+    def test_click_confirmation_duplicate_on_redirect(self):
+        with self.settings(
+            MOBICLICKS={
+                'CONFIRM_CLICKS': True,
+                'CPA_SECURITY_TOKEN': 'foo'
+            },
+            LANGUAGES=(('en-us', 'English'),),
+            ROOT_URLCONF=i18n_patterns('', url(r'', lambda r: r))
+        ):
+            qs_param_click = 'pollen8_click_ref=foo'
+            qs_param_other = 'foo=foo'
+            request = self.make_request('/?%s&%s' % (qs_param_click,
+                                                     qs_param_other))
+            locale_middleware = LocaleMiddleware()
+            # activates language
+            locale_middleware.process_request(request)
+            # redirects for language
+            response = locale_middleware.process_response(
+                request,
+                HttpResponseNotFound()
+            )
+            # should strip the pollen8_click_ref after
+            # it has been tracked
+            self.middleware.process_response(request, response)
+            self.assertNotIn(qs_param_click, response['Location'])
+            self.assertIn(qs_param_other, response['Location'])
 
 
 class RegistrationTrackingTestCase(RequestFactoryTestCase):
